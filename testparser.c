@@ -1299,13 +1299,28 @@ testBuildRelativeUri(void) {
 }
 
 #if defined(LIBXML_WINPATH_ENABLED)
+
+typedef struct {
+    const char *uri;
+    const char *path;
+} xmlParseUriPathTest;
+
 static int
 testWindowsUri(void) {
-    const char *url = "c:/a%20b/file.txt";
     xmlURIPtr uri;
     xmlChar *res;
     int err = 0;
     int i;
+
+    static const xmlParseUriPathTest pathtests[] = {
+        {
+            "c:\\a%20b\\file.txt",
+            "c:\\a b\\file.txt",
+        }, {
+            "c:/a%20b/file.txt",
+            "c:/a b/file.txt",
+        },
+    };
 
     static const xmlRelativeUriTest tests[] = {
         {
@@ -1339,20 +1354,25 @@ testWindowsUri(void) {
         }
     };
 
-    uri = xmlParseURI(url);
-    if (uri == NULL) {
-        fprintf(stderr, "xmlParseURI failed\n");
-        err = 1;
-    } else {
-        if (uri->scheme != NULL) {
-            fprintf(stderr, "invalid scheme: %s\n", uri->scheme);
-            err = 1;
-        }
-        if (uri->path == NULL || strcmp(uri->path, "c:/a b/file.txt") != 0) {
-            fprintf(stderr, "invalid path: %s\n", uri->path);
-            err = 1;
-        }
+    for (i = 0; (size_t) i < sizeof(pathtests) / sizeof(pathtests[0]); i++) {
+        const xmlParseUriPathTest *test = pathtests + i;
 
+        uri = xmlParseURI(test->uri);
+        if (uri == NULL) {
+            fprintf(stderr, "xmlParseURI failed uri=%s\n", test->uri);
+            err = 1;
+        } else {
+            if (uri->scheme) {
+                fprintf(stderr, "xmlParseURI failed uri=%s result=%s expected=NULL\n",
+                        test->uri, uri->scheme);
+                err = 1;
+            }
+
+            if (uri->path == NULL || !xmlStrEqual(BAD_CAST uri->path, BAD_CAST test->path)) {
+                fprintf(stderr, "xmlParseURI failed uri=%s "
+                        "result=%s expected=%s\n", test->uri, uri->path, test->path);
+            }
+        }
         xmlFreeURI(uri);
     }
 

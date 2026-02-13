@@ -37,6 +37,7 @@
 #define PORT_EMPTY_SERVER   -1
 
 static void xmlCleanURI(xmlURIPtr uri);
+static int xmlIsPathSeparator(int c, int isFile);
 
 /*
  * Old rule from 2396 used in legacy handling code
@@ -742,7 +743,7 @@ xmlParse3986PathNoScheme(xmlURIPtr uri, const char **str)
 
     ret = xmlParse3986Segment(uri, &cur, ':', 0);
     if (ret != 0) return(ret);
-    while (*cur == '/') {
+    while (xmlIsPathSeparator(*cur, 1)) {
         cur++;
 	ret = xmlParse3986Segment(uri, &cur, 0, 1);
 	if (ret != 0) return(ret);
